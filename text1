@@ -1,0 +1,518 @@
+FER-net: facial expression recognition using deep neural net
+Karnati Mohan1 • Ayan Seal1,2 • Ondrej Krejcar2,3 • Anis Yazidi4
+Received: 13 April 2020 / Accepted: 28 December 2020 / Published online: 9 January 2021
+ The Author(s), under exclusive licence to Springer-Verlag London Ltd. part of Springer Nature 2021
+Abstract
+Automatic facial expression recognition (FER) is one of the most challenging tasks in computer vision. FER admits a wide
+range of applications in human–computer interaction, behavioral psychology, and human expression synthesis. Extensive
+works have been reported in this field, mainly, based on handcrafted features. However, it is a challenging task to
+accurately extract all the correlated handcrafted features due to the effect of variations caused by emotional state.
+Therefore, there is a quest for further research on accurately extracting relevant features that can capture changes in facial
+expressions (FEs) with high fidelity. In this study, we propose FER-net: a convolution neural network to distinguish FEs
+efficiently with the help of the softmax classifier. We implement our method FER-net along with twenty-one state-of-theart methods and test them on five benchmarking datasets, namely FER2013, Japanese Female Facial Expressions, Extended
+CohnKanade, Karolinska Directed Emotional Faces, and Real-world Affective Faces. Seven FEs, namely neutral, anger,
+disgust, fear, happiness, sadness, and surprise, are considered in this work. The average accuracies on these datasets are
+78.9%, 96.7%, 97.8%, 82.5% and 81.68%, respectively. The obtained results demonstrate that FER-net is preeminent in
+comparison with twenty-one state-of-the-art methods.
+Keywords Facial expression recognition  Convolution neural network  Softmax classifier
+1 Introduction
+Automatic facial expression recognition (FER) system is a
+technology capable of identifying facial expressions (FEs)
+by analyzing visual cues or features that are extracted from
+a digital image or a video frame. Recently, FER has elicited much research attention because of its potential
+applications in human–computer interaction (HCI) [1]. FE
+also plays an imperative role in human behavior understanding [2], mental disorder detection [3], cognition of
+human emotions [4], safe driving [5], photo-realistic
+human expression synthesis [6], computer graphics animation [7] and other similar tasks. A typical FER consists
+of three steps, namely face detection, feature extraction,
+and classification of FEs. In simple terms, the face is
+detected and cropped from a scene or a video frame in the
+first step. Viola-Jones object detection framework is frequently used to detect and crop face from an image [8]. In
+case the cropped face region is tilted, a rotation rectification is required during the preprocessing step [9, 10].
+Generally, facial landmarks such as eyes, nose, and mouth
+corners help to rotate the titled face. In the second step,
+features are extracted from the cropped face region and
+concatenated to form a feature vector. Then the feature
+vector is fed into a machine learning algorithm to identify
+FE. Some of the well-known texture-based feature
+extraction methods include Gabor texture [11], local binary
+pattern (LBP) [12], and histogram of oriented gradients
+[13]. When it comes to appearance-based feature extraction
+methods, some of the well-known methods are based on
+pixel intensity [14], landmark points from the local regions
+[15], extracting the motion features optical flow [16],
+motion history images [17], and volume LBP [18].
+& Ayan Seal
+ayan@iiitdmj.ac.in
+1 PDPM Indian Institute of Information Technology, Design
+and Manufacturing, Jabalpur 482005, India
+2 Faculty of Informatics and Management, Center for Basic
+and Applied Research, University of Hradec Kralove,
+Rokitanskeho 62, 50003 Hradec Kralove, Czech Republic
+3 Malaysia-Japan International Institute of Technology
+(MJIIT), Universiti Teknologi Malaysia, Jalan Sultan Yahya
+Petra, 54100 Kuala Lumpur, Malaysia
+4 Research Group in Applied Artificial Intelligence, Oslo
+Metropolitan University, 460167 Oslo, Norway
+123
+Neural Computing and Applications (2021) 33:9125–9136
+https://doi.org/10.1007/s00521-020-05676-y(0123456789().,-volV) (0123456789().,-volV)
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+However, all the above-mentioned feature extraction
+methods are also called handcrafted features, which were
+exploited in the second step of FER and in the last step a
+classifier such as AdaBoost [19], support vector machines
+[20], k-nearest neighbor [21], and others [22–25] was
+applied. Even though many works have been reported in
+the recent past, FER is still a challenging task due to
+occlusions in face regions, illumination changes, and head
+deflection. In [26], Chen et al. proposed a feature descriptor
+called HOG from Three Orthogonal Planes (HOG-TOP) to
+extract dynamic textures from video sequences that are
+able to characterize facial appearance changes. Moreover,
+the challenging task is to extract accurately all the correlated handcrafted features due to the effect of variations
+caused by emotional state. The latter problem may negatively affect not only the performance of the face detection
+step but also the recognition of FEs. Thus, handcrafted
+features have clear shortcomings that limit their performance in identifying FEs.
+These shortcomings can be overcome by resorting to
+deep learning (DL) techniques [27, 28]. In recent years, DL
+techniques gave superior performances in extracting distinctive features from face images leading as a consequence to increased classification performance of FEs.
+However, DL techniques entail a large number of methods
+and architectures and require appropriate parameter tuning
+and optimization. Some of most known adopted DL techniques for FER include deep belief networks [29], deep
+convolutional neural networks (DCNN) [28, 30], AlexNet,
+VGG19, and ResNet150-based transfer learning methods
+[31], shallow CNN (SCNN) and major CNN (MCNN) [32],
+multi-channel CNN [33, 34], action units inspired deep
+networks [35], extended deep FER [36], fusing-multistream deep networks [37, 38], three CNN networks [39],
+local direction-based robust features and deep belief network [40], ensembles of DCNNs [41], DCNN for binary
+classification (DCNN-BC) of two FEs, namely happy and
+sad [42], identity-aware CNN (IACNN) FER models
+[43, 44], deep metric learning (2B (N?M)Softmax) for
+jointly optimizing a deep metric and softmax loss [43],
+attentional DCNN named a Deep-Emotion in [45],
+weighted fusion of three CNN sub-networks (WFTS) [46],
+and weighted fusion of appearance feature-based CNN and
+geometric features (GF) [47]. For solving the FER problem, a spatiotemporal feature (STF) representation learning
+is presented by encoding the characteristics of FEs using
+DCNN and long short-term memory (LSTM) [48]. Benitez-Quiroz et al. [49], considered a FER system based on
+discriminant color features and a Gabor transform (CF ?
+GT) based algorithm to make the algorithm resilient to
+variance in the timing of facial action units (AUs). In [50],
+Zhang et al. developed a broad learning system for FER. In
+[51], Zhao et al. presented a weighted mixture of double
+channel (WMDC) method for FER where a shallow CNN
+is considered as one channel on LBP (SCNN-LBP) images
+as well as grayscale (SCNN-gray) images, while another
+channel is a partial VGG16 (P-VGG16).
+However, no perfect DL model which identifies FEs
+accurately is available as of now. Moreover, it is unclear
+from the literature whether legacy works performing well
+on datasets trained in lab-controlled environments would
+provide satisfactory performance on real-time datasets such
+as Facial Expression Recognition 2013 (FER2013) and
+Real-world Affective Faces (RAF). In this study, a DL
+network for recognizing FEs called FER-net is proposed,
+which focuses on extracting useful features from gray-scale
+face images. Softmax classifier is used for classifying FEs.
+Five benchmarking datasets, namely FER2013 [52], Japanese Female Facial Expressions (JAFFE) [53], Extended
+CohnKanade (CK?) [54], Karolinska Directed Emotional
+Faces (KDEF) [55], and RAF [56, 57], are considered to
+evaluate the effectiveness of the proposed model over
+twenty-one state-of-the-art DL models. Moreover, each
+dataset contains seven basic expressions, namely neutral
+(NE), anger (AN), disgust (DI), fear (FE), happiness (HA),
+sadness (SA), and surprise (SU).
+The remainder of this paper is organized as follows.
+Section 2 describes our proposed model, FER-net. Experimental results and discussion are illustrated in Sect. 3.
+Section 3 also presents a comparative evaluation of the
+proposed FER-net with twenty-one state-of-the-art models.
+Finally, Sect. 4 concludes the work.
+2 Proposed model: FER-net
+Even though several DL networks exist for FER, most of
+them do not pan well when they are challenged with data
+that require a thorough understanding of the inherent features for FER. The proposed FER-net is specifically
+designed in order to learn the detailed local features like
+eyes and mouth corners that are exhibited by different FEs
+in face images. Micro-FEs play an important role in FER.
+These micro-expressions occur in everyone, often unconsciously and in an unnoticeable manner to an interlocutor.
+These expressions are essential for identifying the emotion
+of individual subjects. Traditional CNN-based methods
+suffer from the overfitting problem on small datasets.
+However, datasets with reliable expressions are relatively
+difficult to collect and tend to be small. Traditional CNN
+models are known to achieve supreme performance in
+imagenet classification, and examples of such models
+include LeNet [58], VGG16 [59], VGG19 [60], ResNet50
+[61], GoogLeNet [62], Dense121 [63], and XceptionNet
+[64]. However, these DL models are specific to the datasets
+they trained on. In other words, although these models can
+9126 Neural Computing and Applications (2021) 33:9125–9136
+123
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+learn common features from the datasets they were trained
+on which allow them to differentiate among a diversity of
+categories, they may fail to perform well on different
+datasets. Furthermore, they do not train well when the
+contrast between images isn’t pronounced. More complex
+networks are usually able to learn deep features, but they
+often result in overfitting the model as the number of
+involved parameters is high. We propose a simple CNN
+network to classify static expressions that perform well
+even on small datasets. The detailed architecture of FERnet is explained in the following subsections:
+2.1 Model architecture
+The schematic block diagram of the FER-net is shown in
+Fig. 1. It consists of four convolution layers (C1, C2, C3,
+and C4), four max-pooling layers (P1, P2, P3, and P4), and
+two fully connected layers (F1 and F2). Batch-normalization is applied to the outputs of four convolutional layers
+and the two fully connected layers. The first and second
+convolution layers consist of 64 and 128 neurons, respectively. On the other hand, the last two convolution layers
+possess 512 neurons. Moreover, the first fully connected
+layer consists of 512 neurons, whereas only 256 neurons
+are present in the second fully connected layer. Each
+convolution layer has 3  3 kernel except the second
+convolutional layer. The second convolution layer and
+max-pooling layer have 5  5 and 2  2 kernels, respectively. Moreover, these filters are used to capture the
+enriched contextual information and allow the model to
+learn true edge variations. The feature map, F, is obtained
+by the first convolutional layer, which is known as a lowlevel feature. The remaining convolutional layers produce
+feature maps, which denote high-level features such as
+edges, corner points, color from the face region automatically. Here, both low-level and high-level features are
+considered for classifying FEs. The task of a convolution
+layer is to perform convolution operation on face image, I,
+with the help of a kernel, Wi. Further, convolved features
+are fed into the activation function, which is in this case a
+rectified linear unit (ReLU). Mathematically, a convolution
+operation can be represented by Eq. 1.
+FðiÞ ¼ RðI  WiÞ; ð1Þ
+where i is the layer in consideration, the asterisk represents
+convolution operation, and R(.) is the activation function.
+Here, ReLU is used as an activation function. ReLU is a
+piece-wise linear function. If the input, y, is positive, then
+ReLU produces y as an output; otherwise, it generates 0.
+ReLU is normally used in the hidden layer because it is
+better than all the available activation functions such as
+sigmoid, tanh, etc. [65]. ReLU is also known as a ramp
+function. Equation 2 is the mathematical representation of
+ReLU.
+ReluðyÞ ¼ ( 0 ifðy\0Þ
+y otherwise ð2Þ
+Batch normalization is applied to normalize the output of
+the input layer and hidden layers by adjusting the mean and
+the scale of the activation functions because a high learning
+rate can be achieved without causing a vanishing gradient
+Fig. 1 Schematic block diagram of the proposed FER-net
+Neural Computing and Applications (2021) 33:9125–9136 9127
+123
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+problem by virtue of the batch-normalization. It gives
+better performance after the activation function. However,
+normalization is performed on the output of the input layer
+so that it always feeds immediately to the next layer.
+Pooling operation is applied to convolved feature maps
+obtained by Eq. 1 to reduce the overfitting problem. The
+pooling is also known as subsampling. It is able to reduce
+the spatial representation of an image by reducing the
+number of parameters associated with CNN. Three different types of pooling operations are mainly available such as
+max-pooling, min-pooling, and average-pooling. The maxpooling is used in FER-net. The example workflow of maxpooling is shown in Fig. 2. The size of the max-pooling
+kernel is 22.
+Finally, the output of the second fully connected layer is
+fed into the softmax layer. The softmax activation function
+is applied in the dense layers of FER-net architecture.
+Softmax is used to calculate the probabilities of the predicted classes. The class with the highest probability is
+considered as an output. The mathematical representation
+of the softmax function is shown in Eq. 3.
+Sx ¼ ezx
+Pm
+y¼1 ezy ; ð3Þ
+where ezx and ezy represent the probability of belonging to
+the categories of x and y, respectively, whereas m denotes
+the number of classes. In this work, the value of m is equal
+to 7 because seven facial expressions are considered.
+2.2 Model training
+Five experiments are conducted based on the number of
+datasets. All the datasets are divided into three parts mainly
+for training sets, validation sets, and testing sets separately.
+The ratio of dividing datasets for training, validation, and
+testing is 80%, 10%, and 10%, respectively. Then FER-net
+is trained using the train set; moreover, while training the
+model too many epochs may lead to overfitting, too few
+epochs may lead to underfitting the model. In this work, the
+early stopping technique is used to address the aforementioned problem. However, early stopping is a technique
+that stops training once the model performance is not
+improving on the validation dataset. While training the
+FER-net, adjusting the learning rate along the way makes it
+faster to fit the model. Therefore, the training accuracy will
+increase, but the testing accuracy will decrease. This is also
+known as over-fitting. Dropout is added to overcome the
+over-fitting problem by shutting down some of the neurons
+in FER-net while training. Dropout is applied to each
+convolution layer of 0.25 and 0.5 to fully connected layers.
+Moreover, the loss function measures the difference
+between the predicted and the actual outputs. The loss
+function gives us feedback on how well the model works.
+Categorical-cross entropy is used to measure the loss in this
+work. The mathematical representation of the loss function
+is shown in Eq. 2.2.
+LðuÞ ¼ 1
+M
+X
+M
+x¼1
+costðz
+x
+;z^xÞ
+¼  1
+M
+X
+M
+x¼1
+½zx logðz^xÞþð1  zxÞlogð1  z^xÞ;
+where zx and z^x are the actual and predicted classes,
+respectively, and M denotes the number of samples, i.e.,
+the number of images in a dataset. One of the aims of a
+CNN is to find the weight parameters, which minimize the
+loss, L. There are optimization techniques that update the
+weight parameters by optimizing the loss, viz., gradient
+descent, stochastic gradient descent (SGD), adaptive gradient descent (Adagrad), root means square propagation
+(RMSprop), adaptive moment estimation (Adam). In this
+study, adam is used for optimization and weight update.
+The various hyperparameters are reported in Table 1.
+3 Experimental results and discussion
+3.1 Environment setting
+Keras framework, anaconda development platform, and
+Python language are considered for the implementation of
+the proposed method. The specifications of the system are
+16GB GPU RAM, 2560 Cuda cores, 256-bit memory
+interface, GDDR5X as memory type, 288.5 GB/s bandwidth, NVIDIA Quadro P5000 as the graphic processor,
+and we used python 3.6.5.
+256 ×256×64 128 ×128×64
+Fig. 2 Illustration of working principle of max-pooling
+Table 1 Various hyperparameters used for training Name Parameter
+Optimization Adam
+Batch size 64
+Learning rate 0.001
+Weight decay 1e-6
+9128 Neural Computing and Applications (2021) 33:9125–9136
+123
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+3.2 Datasets description
+In this study, five publicly available benchmarking datasets, namely FER2013, JAFFE, CK?, and KDEF, and
+RAF, are considered to validate the FER-net. All the
+datasets are considered, viz. seven facial expressions,
+namely NE, AN, SA, HA, FE, SU, and DI. The first, second, third, fourth, and fifth rows of Fig. 3 show some of the
+sample images of FER2013, JAFFE, CK?, KDEF, and
+RAF, respectively. All the images are of 256  256 pixels
+except images present in FER2013 and RAF dataset.
+So, all the images of FER2013 are resized from 48  48
+to 256  256 pixels using bilinear interpolation in the
+preprocessing step. Similarly, all the images of the RAF
+dataset are resized from 100  100 to 256  256 using the
+same algorithm. Datasets statistics are reported in the upper
+half of Table 2. However, a large number of data are
+required for training CNN. Image processing techniques
+such as translation, scaling, rotation, flipping the images
+vertically and horizontally, and adding noise to the images
+are applied to increase the size of the datasets. Statistical
+information of each of the datasets after augmentation is
+reported in the lower half of Table 2.
+RAF KDEF CK+ JAFFE FER2013
+Fig. 3 Some of the sample NE AN DI FE HA SA SU
+images of each dataset [52–56]
+are shown row-wise, whereas
+identical expressions are
+portrayed in column
+Table 2 Statistical information
+of five datasets Dataset Number of images Total
+NE AN DI FE HA SA SU
+Before augmentation
+FER2013 3095 440 4097 7215 4830 3180 4965 27,822
+JAFFE 30 30 29 31 31 31 30 212
+CK? 50 47 61 24 59 28 62 331
+KDEF 70 70 70 70 70 70 70 490
+RAF 3204 867 877 355 5957 2460 1463 15,183
+After augmentation
+FER2013 6995 740 7097 10,215 7830 6180 7965 47,022
+JAFFE 130 130 129 131 131 131 130 912
+CK? 150 147 161 124 159 128 162 1031
+KDEF 120 120 120 120 120 120 120 840
+RAF 3204 867 877 355 5957 2460 1463 15,183
+Neural Computing and Applications (2021) 33:9125–9136 9129
+123
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+3.3 Results and discussion
+In this work, four popularly used evaluation metrics,
+namely accuracy (A), precision (P), recall (R), and f1-score
+(F) [66–72], are considered in this study to compare the
+performance of the proposed FER-net over twenty-one
+state-of-the-art models. However, the values of all the
+metrics are computed from the confusion matrix. Figure 4
+shows the training and validation accuracies of the abovementioned datasets. Red and blue colors are used to
+Fig. 4 Training and validation accuracies of a FER2013, b JAFFE, c CK?, d KDEF, and e RAF datasets
+Fig. 5 Confusion matrix for FER2013 dataset
+9130 Neural Computing and Applications (2021) 33:9125–9136
+123
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+highlight the training and validation accuracies, respectively, of each dataset. Finally, testing sets are fed into
+trained FER-net one after another in order to obtain confusion matrices.
+Table 3 Classification report for FER2013 dataset
+Classes A P R F Support
+NE 0.73 0.73 0.74 0.74 715
+AN 0.95 0.90 0.96 0.93 331
+DI 0.67 0.75 0.68 0.71 712
+FE 0.88 0.85 0.88 0.86 1020
+HA 0.69 0.73 0.69 0.71 808
+SA 0.89 0.88 0.89 0.88 611
+SU 0.76 0.73 0.76 0.75 776
+Fig. 6 Confusion matrix for JAFFE dataset
+Fig. 7 Confusion matrix for CK? dataset
+Fig. 8 Confusion matrix for KDEF dataset
+Fig. 9 Confusion matrix for RAF dataset
+Table 4 Classification report for JAFFE dataset
+Classes A P R F Support
+NE 0.93 1.0 0.93 0.97 15
+AN 1.0 1.0 1.0 1.0 17
+DI 1.0 0.93 1.0 0.97 14
+FE 1.0 1.0 1.0 1.0 6
+HA 1.0 1.0 1.0 1.0 19
+SA 0.91 1.0 0.92 0.96 12
+SU 0.92 0.92 1.0 0.96 13
+Table 5 Classification report for CK? dataset
+Classes A P R F Support
+NE 1.0 1.0 1.0 1.0 14
+AN 1.0 1.0 1.0 1.0 10
+DI 0.95 1.0 0.96 0.97 20
+FE 0.90 0.90 0.90 0.90 10
+HA 1.0 0.94 1.0 0.97 17
+SA 0.90 0.90 0.90 0.90 10
+SU 1.0 1.0 1.0 1.0 12
+Table 6 Classification report for KDEF dataset
+Classes A P R F Support
+NE 0.84 0.92 0.85 0.88 13
+AN 1.0 0.58 1.0 0.73 11
+DI 0.76 0.91 0.77 0.83 13
+FE 0.37 0.75 0.38 0.50 8
+HA 1.0 0.89 1.0 0.94 8
+SA 0.71 1.0 0.71 0.83 14
+SU 0.94 0.86 0.85 0.90 19
+Neural Computing and Applications (2021) 33:9125–9136 9131
+123
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+Then confusion matrices help to calculate the values of
+metrics, which are used further to analyze the performance
+of FER-net. Figure 5 shows the confusion matrix of
+FER2013 dataset. The size of the confusion matrix is 7  7
+as 7 facial expressions are considered for this study. The
+generated metrics from Fig. 5 are reported in Table 3.
+Similarly, the confusion matrices for JAFFE, CK?, KDEF,
+and RAF datasets are shown in Figs. 6, 7, 8 and 9,
+respectively, and their generated metrics are reported in
+Tables 4, 5, 6, and 7, respectively.
+Table 7 Classification report for RAF dataset
+Classes A P R F Support
+NE 0.84 0.74 0.83 0.78 350
+AN 0.68 0.80 0.68 0.73 87
+DI 0.56 0.57 0.55 0.56 74
+FE 0.62 0.69 0.62 0.66 32
+HA 0.93 0.93 0.93 0.93 590
+SA 0.71 0.76 0.71 0.73 245
+SU 0.78 0.84 0.78 0.81 156
+Actual= NE Actual= DI Actual= DI
+Actual= HA Actual= DI Actual= SU
+Actual= HA Actual= SA Actual= AN
+Actual= NE Actual= SU Actual= AN
+Actual= HA Actual= NE Actual= SU
+Predicted= HA Predicted= NE Predicted= HA Predicted= HA Predicted= NA 
+Predicted= NE Predicted= SU Predicted= SA Predicted= DI Predicted= DI
+Predicted= SU Predicted= AN Predicted= AN Predicted= SU Predicted= DI
+Fig. 10 Some of the successfully predicted FEs, images of each
+dataset [52–56] are shown row-wise
+Actual=SA Actual= SA Actual= SU
+Actual= SA Actual=SU Actual= HA
+Actual= AN Actual= FE Actual= FE
+Actual= SU Actual= AN Actual= AN
+Actual= SU Actual= SU Actual= HA
+Predicted= NE Predicted= AN Predicted= NE Predicted= AN Predicted= AN
+Predicted= NE Predicted= NE Predicted= SA Predicted= FE Predicted= DI
+Predicted= SA Predicted= DI Predicted= SA Predicted= NE Predicted= SA
+Fig. 11 Some of the wrongly predicted FEs, images of each dataset
+[52–56] are shown row-wise
+9132 Neural Computing and Applications (2021) 33:9125–9136
+123
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+It is clear from Tables 3, 4, 5, 6, and 7 that the proposed
+CNN model, i.e., FER-net, yields good classification
+accuracies along with other metrics for JAFFE, CK?, and
+KDEF datasets in all most all the cases. However, the
+performance is satisfactory for the other two datasets,
+namely FER2013 and RAF dataset. Some of the successfully and wrongly predicted FEs by the FER-net are shown
+in Figs. 10 and 11, respectively. In this study, the proposed
+FER-net is compared with twenty-one state-of-the-art FER
+methods. A detailed review of these models is beyond the
+scope of this work, which can be referred to
+[26, 31, 32, 41–51]. It is clear from Table 8 that the proposed model outperforms legacy works in almost all the
+cases except broad learning. Broad learning gives better
+results for the KDEF dataset only. We can conclude that
+the proposed model is simple, but still it gives good prediction accuracy in almost all the cases compared to
+complex state-of-the-art models. Moreover, we investigate
+the time taken for the training and testing of our model.
+Table 9 shows the execution time for training and testing
+the proposed model along with various comparative
+methods. However, our proposed method obtains
+satisfactory performance compared to other methods in
+terms of execution time. The testing time per image (TTPI)
+is also shown in Table 9. However, TTPI is the same for all
+the datasets since the size of the image is considered the
+same for all the datasets. The testing time for the test set
+varies with different datasets due to the size of the testing
+set.
+4 Conclusion
+In this study, we propose a simple CNN reckoned as FERnet for FER. Five publicly available benchmarking datasets, namely FER2013, JAFFE, CK?, KDEF, and RAF
+datasets, are considered here. These datasets consist of
+seven basic FEs, namely NE, AN, DI, FE, HA, SA, and SU,
+which are classified by the FER-net along with twenty-one
+state-of-the-art models. The FER-net extracts feature from
+face regions automatically. Then these features are fed to a
+softmax classifier for identifying FEs. It is clear from the
+obtained results that the proposed model is superior to the
+state of the art in almost all cases except broad learning.
+Broad learning yields good results for the KDEF dataset
+only. Moreover, the proposed model is simple as compared
+Table 8 Performance
+comparison of FER-net with
+classification accuracy (%) on
+five datasets viz. FER2013,
+JAFFE, CK?, KDEF, and RAF
+S. no. Method FER2013 JAFFE CK? KDEF RAF
+Classification accuracy (%) on five datasets
+1. AlexNet 77 95 97 76 78
+2. HOG-TOP [26] 52 60 65 55 53
+3. SCNN [32] 55 50 61 55 70
+4. MCNN [32] 64 68 85 67 78
+5. SCNN-LBP [51] 54 88 83 70 71
+6. SCNN-gray [51] 72 92 94 78 78
+7. P-VGG16 [51] 72 96 91 78 57
+8. WMDC [51] 75 92 97 81 75
+9. WFTS [46] 63 90 91 74 70
+10. ACNN-LBP [47] 50 90 95 66 77
+11. Fusion (ACNN-LBP ? GF) [47] 53 90 94 69 78
+12. STF ? LSTM [48] 71 90 82 81 73
+13. Ensemble DCNNs [41] 53 55 67 58 70
+14. DCNN-BC [42] 50 56 73 70 68
+15. IACNN [44] 68 75 95 67 74
+16. 2B(N ? M)Softmax [43] 67 78 87 81 69
+17. CF ? GT [49] 66 77 86 80 70
+18. Broad learning [50] 44 93 81 89 64
+19. Deep-emotion [45] 70 93 94 81 72
+20. VGG19 [31] 74 95 96 81 60
+21. ResNet150 [31] 75 91 89 72 70
+22. Proposed method 79 97 98 83 82
+Bold values indicate that the best results
+Neural Computing and Applications (2021) 33:9125–9136 9133
+123
+Content courtesy of Springer Nature, terms of use apply. Rights reserved.
+to state-of-the-art models and is preeminent in terms of
+accuracy, as well as execution time. In the future, more
+number of datasets would be considered to further validate
+the proposed model. The proposed model provides satisfactory result for KDEF dataset; however, there is provision to increase the performance, which deserves further
+study
